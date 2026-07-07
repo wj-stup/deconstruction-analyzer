@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "deconstruction-analyzer ↔ multi-role-novel-iteration 握手协议",
+  "version": "1.8.0",
+  "description": "定义 type_router 输出字段，供 multi-role report_parser/report_enhancer 消费。新增：formula_by_wordcount、intent、cross_type_info 扩展字段、字数档位节奏公式、Chapter 9 文风DNA标签、量化指标卡、素材完整度",
+
+  "type_router_output": {
+    "type": "object",
+    "required": ["matched", "query", "major_category", "writing_mode", "weights", "path_names"],
+    "properties": {
+      "matched":            { "type": "boolean",  "description": "是否成功匹配类型" },
+      "query":              { "type": "string",   "description": "用户输入的原始查询" },
+      "major_category":     { "type": "string",   "description": "主大类名，如'末世/废土'" },
+      "minor_category":     { "type": ["string", "null"], "description": "小类名" },
+      "sub_category":       { "type": ["string", "null"], "description": "子类名" },
+      "path_ids":           { "type": "array",    "description": "分类树路径ID", "items": { "type": "string" } },
+      "path_names":         { "type": "array",    "description": "分类树路径名称", "items": { "type": "string" } },
+      "match_level":        { "type": "integer",  "description": "匹配深度(0=大类,1=小类,2=子类)" },
+      "weights":            { "type": "object",   "description": "6维度分析权重", "additionalProperties": { "type": "integer" } },
+      "extra_dimensions":   { "type": "array",    "description": "额外分析维度", "items": { "type": "string" } },
+      "analysis_focus_description": { "type": "string", "description": "匹配级别描述" },
+      "cross_type_info":    {
+        "type": ["object", "null"],
+        "description": "交叉类型信息。方式1(多大类命中)含primary/secondary/primary_score/secondary_score/all_matches；方式2(关键词推断)额外含source='keyword_inference'和inferred_from",
+        "properties": {
+          "primary":          { "type": "string",  "description": "主大类名" },
+          "secondary":        { "type": "string",  "description": "次大类名（多大类命中时为实际匹配，关键词推断时为推断结果）" },
+          "primary_score":    { "type": "integer",  "description": "主大类得分" },
+          "secondary_score":  { "type": "integer",  "description": "次大类得分（关键词推断时为0）" },
+          "all_matches":      { "type": "object",   "description": "所有大类得分映射", "additionalProperties": { "type": "integer" } },
+          "source":           { "type": "string",   "description": "交叉类型来源。'keyword_inference'表示关键词推断，缺省为多大类直接命中" },
+          "inferred_from":    { "type": "string",   "description": "触发推断的原始关键词，仅source=keyword_inference时存在" }
+        }
+      },
+      "writing_mode":       { "type": "string",   "enum": ["web", "scifi", "mystery", "romance", "fantasy", "historical", "literary", "free", "custom"], "description": "合规写作模式（web/scifi/mystery/romance/fantasy/historical为标准模式，literary/free/custom为扩展模式）" },
+      "error":              { "type": ["string", "null"] },
+      "reference_files":    { "type": "array",    "items": { "type": "string" } },
+      "rhythm_profile":     { "type": "object",   "additionalProperties": { "type": "string" } },
+      "opening_formula_hint": { "type": "object" },
+      "formula":            { "type": "object",   "description": "大类标准节奏公式（长篇，开篇/爽点节奏/字数分配/备注）" },
+      "formula_by_wordcount": {
+        "type": "object",
+        "description": "按字数档位自适应的节奏公式。外层key为字数档位(2万字/5万字/20万字+)，内层含开篇/爽点节奏/字数分配/备注",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "开篇":     { "type": "string" },
+            "爽点节奏": { "type": "string" },
+            "字数分配": { "type": "string" },
+            "备注":     { "type": "string" }
+          }
+        }
+      },
+      "thrillpoint_focus":  { "type": "array",    "items": { "type": "string" } },
+      "suggestion":         { "type": ["string", "null"], "description": "类型匹配建议，如最接近的已有类型（matched=false时有值）" },
+      "intent": {
+        "type": "object",
+        "description": "用户意图分析。影响权重分配(analysis_weight_shift)，最终效果体现在report内容中",
+        "properties": {
+          "intent_id":            { "type": "string",   "description": "意图ID(A-F)" },
+          "intent_label":         { "type": "string",   "description": "意图标签" },
+          "intent_icon":          { "type": "string",   "description": "意图图标" },
+          "step3_focus":          { "type": "string",   "description": "Step3分析侧重" },
+          "step5_focus":          { "type": "string",   "description": "Step5验证侧重" },
+          "extra_output":         { "type": "string",   "description": "额外输出" },
+          "analysis_weight_shift": { "type": ["object", "null"], "description": "权重覆盖，null表示不覆盖默认权重", "additionalProperties": { "type": "integer" } }
+        }
+      }
+    }
+  },
+
+  "report_yaml_meta": {
+    "type": "object",
+    "required": ["目标类型", "适用写作模式"],
+    "properties": {
+      "分析时间":    { "type": "string" },
+      "分析对象":    { "type": "string" },
+      "目标类型":    { "type": "string" },
+      "子类型":      { "type": "string" },
+      "字数区间":    { "type": "string" },
+      "适用写作模式": { "type": "string", "enum": ["web", "scifi", "mystery", "romance", "fantasy", "historical", "literary", "free", "custom"] },
+      "类型匹配":    { "type": "string" },
+      "用户意图":    { "type": "string" },
+      "交叉类型":    { "type": "string" },
+      "匹配状态":    { "type": "string" },
+      "素材完整度":  { "type": "string", "description": "5级素材获取完整度（●●●●●=100%，每级20%，公式：(已获取信息类别数/8)x100%）" },
+      "字数档位节奏公式": { "type": "object", "description": "按字数档位的节奏公式。外层key为档位名(如2万字/5万字/20万字+)，内层含开篇/爽点节奏/字数分配/备注", "additionalProperties": { "type": "object" } },
+      "协议版本":    { "type": "string", "description": "握手协议版本号" }
+    }
+  },
+
+  "parser_output": {
+    "type": "object",
+    "required": ["analysis_type", "writing_mode"],
+    "properties": {
+      "analysis_type":          { "type": "string",  "description": "目标大类名" },
+      "writing_mode":           { "type": "string",   "enum": ["web", "scifi", "mystery", "romance", "fantasy", "historical", "literary", "free", "custom"], "description": "合规写作模式（与type_router_output.writing_mode一致）" },
+      "cross_type":             { "type": "string",  "description": "交叉类型（如'末世/废土 + 都市'）" },
+      "matched_type_path":      { "type": "string",  "description": "子类型路径" },
+      "target_word_range":      { "type": "string",  "description": "目标字数区间（如'15000-25000字'）" },
+      "material_completeness":  { "type": "string",  "description": "素材完整度（5级）" },
+      "schema_version":         { "type": "string",  "description": "报告协议版本" },
+      "word_count_rhythm_formula": { "type": "object",  "description": "按字数档位的节奏公式。供outline_generator按目标字数自适应选择节奏", "additionalProperties": { "type": "object" } },
+      "type_info":              { "type": "object",  "description": "Ch1 核心类型特征", "additionalProperties": { "type": "string" } },
+      "popular_elements":       { "type": "array",   "description": "Ch1 流行元素", "items": { "type": "object" } },
+      "target_works":           { "type": "array",   "description": "Ch1 对标作品", "items": { "type": "object" } },
+      "golden_three":           { "type": "array",   "description": "Ch2 黄金三章模板", "items": {} },
+      "act_structure":          { "type": "object",  "description": "Ch2 全篇结构蓝图", "additionalProperties": {} },
+      "word_allocation":        { "type": "object",  "description": "Ch2 字数分配", "additionalProperties": { "type": "string" } },
+      "rhythm_curve":           { "type": "string",  "description": "Ch3 节奏曲线描述" },
+      "pleasure_types":         { "type": "array",   "description": "Ch3 爽点类型", "items": {} },
+      "hook_matrix":            { "type": "array",   "description": "Ch3 钩子设计矩阵", "items": { "type": "object" } },
+      "prototypes":             { "type": "array",   "description": "Ch4 主角原型", "items": { "type": "object" } },
+      "supporting_templates":   { "type": "array",   "description": "Ch4 配角模板", "items": { "type": "object" } },
+      "opening_formulas":       { "type": "array",   "description": "Ch5 开篇钩子公式", "items": { "type": "object" } },
+      "opening_checklist":      { "type": "array",   "description": "Ch5 开篇自检清单", "items": { "type": "string" } },
+      "goldfinger_types":       { "type": "array",   "description": "Ch6 金手指类型", "items": { "type": "object" } },
+      "goldfinger_principles":  { "type": "array",   "description": "Ch6 金手指设计原则", "items": { "type": "object" } },
+      "danger_zones":           { "type": "array",   "description": "Ch7 雷区清单", "items": { "type": "object" } },
+      "reader_negative_keywords": { "type": "array", "description": "Ch7 负面反馈关键词", "items": { "type": "string" } },
+      "role_lookup":            { "type": "object",  "description": "Ch8 多角色速查表", "additionalProperties": {} },
+      "style_dna_tags":         { "type": "array",   "description": "Ch9 文风DNA标签（类型级）", "items": { "type": "object" } },
+      "quantitative_indicators": { "type": "object",  "description": "Ch9 量化指标汇总", "additionalProperties": {} },
+      "_quality":               { "type": "object",  "description": "报告质量评分", "additionalProperties": {} }
+    }
+  }
+}
